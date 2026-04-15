@@ -38,7 +38,6 @@ export async function initializeData(toRoute, forceReset = false) {
     /*=================================/
     / RESET & INIT                     /
     /=================================*/
-    await backAuthStore.refresh();
     backTableViewsStore.resetData(resetPersistant);
     resetCollections(resetPersistant);
     resetWorkflows();
@@ -46,6 +45,7 @@ export async function initializeData(toRoute, forceReset = false) {
     if (forceReset) {
         wwLib.$emit('reset-library-variables');
     }
+    await backAuthStore.refresh();
 
     /*=================================/
     / ONLOAD BEFORE FETCH              /
