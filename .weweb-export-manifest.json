@@ -2,14 +2,14 @@
   "version": 1,
   "managedFiles": {
     ".env": "017d0bff07165a29a110b74689b1e820abe890aa",
-    ".env.production": "68f3ad6efc43d2206714b0a078993111407e09ab",
-    ".env.staging": "cba65b1eef0ebb43501d5f4042177940ad233114",
+    ".env.production": "4dab42556faa1e5cefd943c74e64b5f36cae7901",
+    ".env.staging": "e680f4242adf9b51000ac0920e227e3e4d2c0679",
     "eslint.config.js": "10e4108c3fbdf3c4ba805f12c304226c8d03418c",
     "package-lock.json": "4aeff9de6c4f3b3fbcddafbbc302dcb6355b1b5c",
     "package.json": "1090eb99c7ae410a9fcdef7eba15bd8f34d1846c",
     "plugins-settings.json": "9e26dfeeb6e641a33dae4961196235bdb965b21b",
     "postbuild.js": "c9721541485066c11aecc9477a0f515d018b290f",
-    "public/data/d98b3b3d-a275-4f70-8ec6-57b4192fbd3a.json": "cc4c24031443ef8a42aab5e6f42a926342eb65d4",
+    "public/data/d98b3b3d-a275-4f70-8ec6-57b4192fbd3a.json": "dff7937cc3dcf8889f44dac1425ac5d3d40097eb",
     "public/images/1920px-1970s_fanzines__21224199545_.jpg": "2e48d5d52f5abe86b401092e4e000b1b48639fda",
     "public/images/Plan_de_travail_2.png": "d3dc4a23cb9accf1c79eb2117f6e5606ab09df6c",
     "public/images/barcelona.jpg": "e70c854373446e7d51ef3e063c5daf9ab517ef2a",
@@ -22,7 +22,7 @@
     "public/images/solarpunk.jpg": "0eca1a976a0a45b8af17ef2d5798be5b5780d81e",
     "public/manifest.json": "7d88f91b22052cf3a0f401e784589c3bfe65eb3d",
     "public/robots.txt": "0bd092e3cfdcd64aa9f1a61b877797ae3cba194f",
-    "public/serviceworker.js": "8f51c99383c56931d1032be05055b116183e7e2c",
+    "public/serviceworker.js": "10a286e792a77d1b9fc815aabea15b3576c3b59a",
     "public/sitemap.xml": "f762d2f5916032bf9a47b172dfc51b5480e00914",
     "src/_common/helpers/code/backendWorkflows.js": "74cae774c26bb9a3e58ad47ef1e21684bc4e652d",
     "src/_common/helpers/code/backendWorkflows.test.js": "7ef3676daae86c4f75e58a83529d628d8fb20965",
@@ -95,7 +95,7 @@
     "src/_front/integrations/weweb-auth/package.json": "f237cffa9a439570a286398af22db42dfc2baaf7",
     "src/_front/integrations/weweb-auth/weweb-auth.front.js": "d92a524e5e677a59d9ee14887bca72b9dd3fa9da",
     "src/_front/main.js": "aaea85d8985c55ce0533de110100e2a53afa8e79",
-    "src/_front/router.js": "13e5ce7a4546724c549172542dae6e47647ea08c",
+    "src/_front/router.js": "e4ebab2e194c91f068d2debcc57ee7aa93de605a",
     "src/_front/use/useComponentAdvancedInteractions.js": "db8e0f958e779b9386a66487f56ec6893d83790c",
     "src/_front/use/useComponentKeyframes.js": "2e4a87351ff0d5010ed6cb4b7fd8eeba1dabf520",
     "src/_front/use/useComponentStates.js": "2637b9d8476e9c2cfe290103695b6531a52bc0b8",
@@ -242,9 +242,9 @@
     "src/wwLib/services/wwVariable.js": "79363a45ae914ce389bce7fcd53935035ef14f25",
     "src/wwLib/services/wwWebsiteData.js": "620b03d6ee281dad45a33dbd2ca432ba7b9d52a3",
     "src/wwLib/services/wwWorkflow.js": "67d1aa2bff5ec9eb91e02f5d08eb8982d372ccde",
-    "template.html": "a3b0d84f1237169e75416ec43001aac573b8dbba",
+    "template.html": "e27eff6779e3242aabe54c896c0a9c4d18001579",
     "tsconfig.app.json": "0b84bc6e6d0d38b6fcd3e56b004b82a2ee269797",
     "tsconfig.node.json": "44d42fe8d79ae3722878356de89c2a7f6d84e867",
-    "vite.config.js": "471503cc8642b2c24e8ae87637de2137bb84bffc"
+    "vite.config.js": "8a93c266bf48bb6125ae3ca57ff0b5816c138c45"
   }
 }
