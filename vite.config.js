@@ -6,7 +6,7 @@ import fs from 'fs';
 import { parseEnv } from 'node:util';
 import handlebars from 'handlebars';
 
-const pages = {"d98b3b3d-a275-4f70-8ec6-57b4192fbd3a-en":{"outputDir":"./","lang":"en","title":"Dropazine","cacheVersion":19,"meta":[{"name":"title","content":"Dropazine"},{"name":"description","content":"Créez vos propres fanzines et envoyez les à vos abonnés. "},{"name":"keywords","content":"fanzine, diy, impression, impression à la demande, appel à participation"},{"name":"image","content":"/images/Capture_d’écran_2026-04-17_à_11.40.37.png?_wwcv=19"},{"itemprop":"name","content":"Dropazine"},{"itemprop":"description","content":"Créez vos propres fanzines et envoyez les à vos abonnés. "},{"itemprop":"image","content":"/images/Capture_d’écran_2026-04-17_à_11.40.37.png?_wwcv=19"},{"name":"twitter:card","content":"summary"},{"name":"twitter:title","content":"Dropazine"},{"name":"twitter:description","content":"Créez vos propres fanzines et envoyez les à vos abonnés. "},{"name":"twitter:image","content":"/images/Capture_d’écran_2026-04-17_à_11.40.37.png?_wwcv=19"},{"property":"og:title","content":"Dropazine"},{"property":"og:description","content":"Créez vos propres fanzines et envoyez les à vos abonnés. "},{"property":"og:image","content":"/images/Capture_d’écran_2026-04-17_à_11.40.37.png?_wwcv=19"},{"property":"og:site_name","content":"Dropazine"},{"property":"og:type","content":"website"},{"name":"robots","content":"index, follow"}],"scripts":{"head":"\n<style>\n.paper {\n    background-repeat: repeat !important;\n    background-size: 400px 392px !important; \n    background-position: top left !important;\n    background-image: url('images/so-white__1_.png?_wwcv=19');\n}\n</style>","body":"\n"},"baseTag":{"href":"/","target":"_self"},"alternateLinks":[{"rel":"alternate","hreflang":"x-default","href":"https://d9d0d618-de7d-4699-87b6-7e1ac3795fe1.weweb-preview.io/"},{"rel":"alternate","hreflang":"en","href":"https://d9d0d618-de7d-4699-87b6-7e1ac3795fe1.weweb-preview.io/"}]}};
+const pages = {"d98b3b3d-a275-4f70-8ec6-57b4192fbd3a-en":{"outputDir":"./","lang":"en","title":"Dropazine","cacheVersion":20,"meta":[{"name":"title","content":"Dropazine"},{"name":"description","content":"Créez vos propres fanzines et envoyez les à vos abonnés. "},{"name":"keywords","content":"fanzine, diy, impression, impression à la demande, appel à participation"},{"name":"image","content":"/images/Capture_d’écran_2026-04-17_à_11.40.37.png?_wwcv=20"},{"itemprop":"name","content":"Dropazine"},{"itemprop":"description","content":"Créez vos propres fanzines et envoyez les à vos abonnés. "},{"itemprop":"image","content":"/images/Capture_d’écran_2026-04-17_à_11.40.37.png?_wwcv=20"},{"name":"twitter:card","content":"summary"},{"name":"twitter:title","content":"Dropazine"},{"name":"twitter:description","content":"Créez vos propres fanzines et envoyez les à vos abonnés. "},{"name":"twitter:image","content":"/images/Capture_d’écran_2026-04-17_à_11.40.37.png?_wwcv=20"},{"property":"og:title","content":"Dropazine"},{"property":"og:description","content":"Créez vos propres fanzines et envoyez les à vos abonnés. "},{"property":"og:image","content":"/images/Capture_d’écran_2026-04-17_à_11.40.37.png?_wwcv=20"},{"property":"og:site_name","content":"Dropazine"},{"property":"og:type","content":"website"},{"name":"robots","content":"index, follow"}],"scripts":{"head":"\n<style>\n.paper {\n    background-repeat: repeat !important;\n    background-size: 400px 392px !important; \n    background-position: top left !important;\n    background-image: url('images/so-white__1_.png?_wwcv=20');\n}\n</style>","body":"\n"},"baseTag":{"href":"/","target":"_self"},"alternateLinks":[{"rel":"alternate","hreflang":"x-default","href":"https://d9d0d618-de7d-4699-87b6-7e1ac3795fe1.weweb-preview.io/"},{"rel":"alternate","hreflang":"en","href":"https://d9d0d618-de7d-4699-87b6-7e1ac3795fe1.weweb-preview.io/"}]}};
 
 // Read the main HTML template
 const template = fs.readFileSync(path.resolve(__dirname, 'template.html'), 'utf-8');
@@ -47,15 +47,19 @@ function getFrontEnvironmentValues(root, mode) {
         return {};
     }
 
-    return Object.fromEntries(Object.entries(parseEnv(fs.readFileSync(filePath, 'utf8'))).filter(([key]) => !key.startsWith('VITE_')));
+    return Object.fromEntries(
+        Object.entries(parseEnv(fs.readFileSync(filePath, 'utf8'))).filter(([key]) => !key.startsWith('VITE_'))
+    );
 }
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
     return {
         plugins: [vue()],
         base: "/",
         define: {
             global: 'globalThis',
+            __VUE_PROD_DEVTOOLS__: mode === 'development',
+            __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: mode === 'development',
             __WW_FRONT_ENV_VARIABLES__: JSON.stringify({
                 staging: getFrontEnvironmentValues(__dirname, 'staging'),
                 production: getFrontEnvironmentValues(__dirname, 'production'),
@@ -76,6 +80,9 @@ export default defineConfig(() => {
                 plugins: [autoprefixer],
             },
         },
+        server: {
+            port: 8080,
+        },
         build: {
             chunkSizeWarningLimit: 10000,
             rolldownOptions: {
@@ -87,6 +94,5 @@ export default defineConfig(() => {
                 },
             },
         },
-        logLevel: 'warn',
     };
 });

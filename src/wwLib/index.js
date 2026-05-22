@@ -10,8 +10,8 @@ import { useIconsStore } from '@/pinia/icons';
 import { computed, reactive } from 'vue';
 import { useBackTableViewsStore } from '@/pinia/backTableViews.js';
 import { useBackAuthStore } from '@/pinia/backAuth.js';
+import { getRuntimeEnvironment } from '@/helpers/frontEnv.js';
 import { useEnvVariablesStore } from '@/pinia/envVariables.js';
-import { resolveEnvironmentFromEnvVariables } from '@/helpers/frontEnv.js';
 
 export default {
     ...services,
@@ -185,10 +185,7 @@ export default {
     }),
 
     getEnvironment() {
-        if (wwLib.manager) return 'editor';
-
-        const envVariablesStore = useEnvVariablesStore(wwLib.$pinia);
-        return resolveEnvironmentFromEnvVariables(envVariablesStore.values);
+        return getRuntimeEnvironment();
     },
 
     useBaseTag() {

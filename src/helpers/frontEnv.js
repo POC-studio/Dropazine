@@ -1,3 +1,5 @@
+let frontEnvVariables;
+
 export function mapEnvironmentValuesToEnvVariables(valuesByEnvironment) {
     if (!valuesByEnvironment || typeof valuesByEnvironment !== 'object' || Array.isArray(valuesByEnvironment)) {
         throw new Error('Missing or invalid bundled front env variables');
@@ -46,6 +48,17 @@ function getOrigin(url) {
     }
 }
 
+export function getFrontEnvVariables() {
+     /* wwFront:start */
+    if (!frontEnvVariables) {
+        // eslint-disable-next-line no-undef
+        frontEnvVariables = mapEnvironmentValuesToEnvVariables(__WW_FRONT_ENV_VARIABLES__);
+    }
+
+    return frontEnvVariables;
+    /* wwFront:end */
+}
+
 export function resolveEnvironmentFromEnvVariables(values, currentOrigin = window.location.origin) {
     if (!values || typeof values !== 'object' || Array.isArray(values)) {
         return 'production';
@@ -64,4 +77,10 @@ export function resolveEnvironmentFromEnvVariables(values, currentOrigin = windo
     }
 
     return 'production';
+}
+
+export function getRuntimeEnvironment(currentOrigin = window.location.origin) {
+     /* wwFront:start */
+    return resolveEnvironmentFromEnvVariables(getFrontEnvVariables(), currentOrigin);
+    /* wwFront:end */
 }

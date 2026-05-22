@@ -9,14 +9,55 @@ import {
     onPageUnload,
 } from '@/_common/helpers/data';
 import { convertPathToRouterFormat } from '@/_common/helpers/urlParametersParsing';
-import { isPublishedProductionHost } from '@/_common/helpers/publishedRuntimeEnv.js';
-
+import { getRuntimeEnvironment } from '@/helpers/frontEnv.js';
 import { useBackAuthStore } from '@/pinia/backAuth.js';
 
+/**
+ * @typedef {import('vue-router').Router} Router
+ * @typedef {import('vue-router').RouteRecordRaw} RouteRecordRaw
+ * @typedef {import('vue-router').RouterOptions} RouterOptions
+ * @typedef {import('vue-router').RouterScrollBehavior} RouterScrollBehavior
+ */
+
+/**
+ * @typedef {Object} Lang
+ * @property {string} lang
+ * @property {boolean} [default]
+ * @property {boolean} [isDefaultPath]
+ */
+
+/**
+ * @typedef {Object} PageSecurity
+ * @property {'authenticated' | string} [accessRule]
+ * @property {string[]} [accessRoles]
+ * @property {'AND' | 'OR'} [accessRolesCondition]
+ */
+
+/**
+ * @typedef {Object} Page
+ * @property {string} id
+ * @property {Record<string, string> & { default: string }} paths
+ * @property {string[]} langs
+ * @property {PageSecurity} [security]
+ * @property {{ userGroup: string }[]} [pageUserGroups]
+ */
+
+/**
+ * @typedef {Object} DesignInfo
+ * @property {string} homePageId
+ * @property {Page[]} pages
+ * @property {Lang[]} langs
+ * @property {unknown} [auth]
+ * @property {{ href?: string }} [baseTag]
+ */
+
+/** @type {Router} */
 let router;
+/** @type {RouteRecordRaw[]} */
 const routes = [];
 
-function scrollBehavior(to) {
+/** @type {RouterScrollBehavior} */
+const scrollBehavior = to => {
     if (to.hash) {
         return {
             el: to.hash,
@@ -25,23 +66,28 @@ function scrollBehavior(to) {
     } else {
         return { top: 0 };
     }
-}
+};
 
  
 /* wwFront:start */
 import pluginsSettings from '../../plugins-settings.json';
 
-// eslint-disable-next-line no-undef
-window.wwg_designInfo = {"id":"d9d0d618-de7d-4699-87b6-7e1ac3795fe1","homePageId":"d98b3b3d-a275-4f70-8ec6-57b4192fbd3a","authPluginId":null,"baseTag":null,"defaultTheme":"light","langs":[{"lang":"en","default":true}],"background":{},"workflows":[],"back":{"isServerSetup":{"staging":false,"production":false}},"auth":null,"pages":[{"id":"d98b3b3d-a275-4f70-8ec6-57b4192fbd3a","linkId":"d98b3b3d-a275-4f70-8ec6-57b4192fbd3a","name":"Dropazine","folder":null,"paths":{"en":"home","default":"home"},"langs":["en"],"cmsDataSetPath":null,"sections":[{"uid":"caa49244-e4cb-438b-9dd3-1c8d3f5e0b72","sectionTitle":"Header","linkId":"0f3abc06-3ee5-4cc0-bc81-8f88237807b2"},{"uid":"c18492b0-3353-470e-ae2a-2c12ac121291","sectionTitle":"Features","linkId":"4ef2708e-84d3-4000-88c3-e1a3e1ec0aa6"},{"uid":"250be115-86ab-41ba-874b-3db6e232a309","sectionTitle":"Features - Copy","linkId":"90475e14-e684-4109-b21b-1cd89b40d684"},{"uid":"bd8f97f2-acf0-4650-ba1b-a24ff0f9c8a1","sectionTitle":"Section","linkId":"3782a175-2a35-4db0-bb29-83d85e73e24f"},{"uid":"7885e9fb-c06a-4ca1-a7ef-95514903377e","sectionTitle":"Format","linkId":"f6454d0a-c662-4255-a0ac-88d35d641ae7"},{"uid":"25a96832-37dc-4659-8a2c-5d361a6e55a5","sectionTitle":"Pricing","linkId":"6362cb16-89d9-464b-8f1e-312cc629aae1"},{"uid":"1128ae50-272b-452b-a40d-8ff79a80cd7f","sectionTitle":"Footer","linkId":"be9c8fe1-a91d-411b-80e4-cd9e67abb69a"}],"pageUserGroups":[],"title":{"en":"Dropazine","fr":"Vide | Commencer à partir de zéro"},"meta":{"desc":{"en":"Créez vos propres fanzines et envoyez les à vos abonnés. "},"keywords":{"en":"fanzine, diy, impression, impression à la demande, appel à participation"},"socialDesc":{},"socialTitle":{"en":"Dropazine"},"structuredData":{}},"metaImage":"images/Capture_d’écran_2026-04-17_à_11.40.37.png?_wwcv=19","security":{}}],"plugins":[]};
-// eslint-disable-next-line no-undef
-window.wwg_cacheVersion = 19;
-// eslint-disable-next-line no-undef
+window.wwg_designInfo = {"id":"d9d0d618-de7d-4699-87b6-7e1ac3795fe1","homePageId":"d98b3b3d-a275-4f70-8ec6-57b4192fbd3a","authPluginId":null,"baseTag":null,"defaultTheme":"light","langs":[{"lang":"en","default":true}],"background":{},"workflows":[],"back":{"isServerSetup":{"staging":false,"production":false}},"auth":null,"pages":[{"id":"d98b3b3d-a275-4f70-8ec6-57b4192fbd3a","linkId":"d98b3b3d-a275-4f70-8ec6-57b4192fbd3a","name":"Dropazine","folder":null,"paths":{"en":"home","default":"home"},"langs":["en"],"cmsDataSetPath":null,"sections":[{"uid":"caa49244-e4cb-438b-9dd3-1c8d3f5e0b72","sectionTitle":"Header","linkId":"0f3abc06-3ee5-4cc0-bc81-8f88237807b2"},{"uid":"c18492b0-3353-470e-ae2a-2c12ac121291","sectionTitle":"Features","linkId":"4ef2708e-84d3-4000-88c3-e1a3e1ec0aa6"},{"uid":"250be115-86ab-41ba-874b-3db6e232a309","sectionTitle":"Features - Mais encore","linkId":"90475e14-e684-4109-b21b-1cd89b40d684"},{"uid":"bd8f97f2-acf0-4650-ba1b-a24ff0f9c8a1","sectionTitle":"Section","linkId":"3782a175-2a35-4db0-bb29-83d85e73e24f"},{"uid":"7885e9fb-c06a-4ca1-a7ef-95514903377e","sectionTitle":"Format","linkId":"f6454d0a-c662-4255-a0ac-88d35d641ae7"},{"uid":"7ecb4973-1b24-40d4-ae45-8e349332c6dd","sectionTitle":"Pour qui","linkId":"abe1a778-7b2d-419b-80ab-65a213b0b7ae"},{"uid":"25a96832-37dc-4659-8a2c-5d361a6e55a5","sectionTitle":"Pricing","linkId":"6362cb16-89d9-464b-8f1e-312cc629aae1"},{"uid":"1128ae50-272b-452b-a40d-8ff79a80cd7f","sectionTitle":"Footer","linkId":"be9c8fe1-a91d-411b-80e4-cd9e67abb69a"}],"pageUserGroups":[],"title":{"en":"Dropazine","fr":"Vide | Commencer à partir de zéro"},"meta":{"desc":{"en":"Créez vos propres fanzines et envoyez les à vos abonnés. "},"keywords":{"en":"fanzine, diy, impression, impression à la demande, appel à participation"},"socialDesc":{},"socialTitle":{"en":"Dropazine"},"structuredData":{}},"metaImage":"images/Capture_d’écran_2026-04-17_à_11.40.37.png?_wwcv=20","security":{}}],"plugins":[]};
+window.wwg_cacheVersion = 20;
 window.wwg_pluginsSettings = pluginsSettings;
-// eslint-disable-next-line no-undef
 window.wwg_disableManifest = false;
 
-const defaultLang = window.wwg_designInfo.langs.find(({ default: isDefault }) => isDefault) || {};
+/** @type {Lang} */
+const defaultLang = window.wwg_designInfo.langs.find(({ default: isDefault }) => isDefault) || {
+    lang: 'en',
+    default: true,
+};
 
+/**
+ * @param {Page} page
+ * @param {Lang} lang
+ * @param {string} [forcedPath]
+ */
 const registerRoute = (page, lang, forcedPath) => {
     const langSlug = !lang.default || lang.isDefaultPath ? `/${lang.lang}` : '';
     let path =
@@ -65,13 +111,45 @@ const registerRoute = (page, lang, forcedPath) => {
             wwLib.wwLang.defaultLang = defaultLang.lang;
             wwLib.$store.dispatch('front/setLang', lang.lang);
 
+            const backAuthStore = useBackAuthStore(wwLib.$pinia);
+            if (!wwLib.wwAuth.plugin) {
+                if (!backAuthStore.projectAuth && window.wwg_designInfo.auth) {
+                    backAuthStore.setProjectAuth(window.wwg_designInfo.auth);
+                }
+            }
+
             //Init plugins
             await initializePlugins();
 
             //Init integration instances
             await initializeIntegrationInstances();
 
-            if (wwLib.wwAuth.plugin) {
+            if (!wwLib.wwAuth.plugin) {
+                await backAuthStore.refresh();
+                const projectAuth = backAuthStore.projectAuth || {};
+
+                //Check if private page
+                if (page.security?.accessRule === 'authenticated') {
+                    if (!backAuthStore.isAuthenticated) {
+                        window.location.href = `${wwLib.wwPageHelper.getPagePath(
+                            projectAuth.unauthenticatedPageId
+                        )}?_source=${to.path}`;
+                        return null;
+                    } else if (page.security?.accessRoles?.length) {
+                        const hasAccess =
+                            page.security.accessRolesCondition === 'AND'
+                                ? backAuthStore.matchAllRoles(page.security.accessRoles)
+                                : backAuthStore.matchAnyRoles(page.security.accessRoles);
+                        if (!hasAccess) {
+                            window.location.href = `${wwLib.wwPageHelper.getPagePath(
+                                projectAuth.unauthorizedPageId
+                            )}?_source=${to.path}`;
+                            return null;
+                        }
+                    }
+                }
+            } else {
+                // Deprecated legacy auth plugins, to remove in the future
                 if (page.pageUserGroups?.length) {
                     await wwLib.wwAuth.init();
 
@@ -94,34 +172,6 @@ const registerRoute = (page, lang, forcedPath) => {
                         )}?_source=${to.path}`;
 
                         return null;
-                    }
-                }
-            } else {
-                const backAuthStore = useBackAuthStore(wwLib.$pinia);
-                if (!backAuthStore.projectAuth && window.wwg_designInfo.auth) {
-                    backAuthStore.setProjectAuth(window.wwg_designInfo.auth);
-                }
-                await backAuthStore.refresh();
-                const projectAuth = backAuthStore.projectAuth || {};
-
-                //Check if private page
-                if (page.security?.accessRule === 'authenticated') {
-                    if (!backAuthStore.isAuthenticated) {
-                        window.location.href = `${wwLib.wwPageHelper.getPagePath(
-                            projectAuth.unauthenticatedPageId
-                        )}?_source=${to.path}`;
-                        return null;
-                    } else if (page.security?.accessRoles?.length) {
-                        const hasAccess =
-                            page.security.accessRolesCondition === 'AND'
-                                ? backAuthStore.matchAllRoles(page.security.accessRoles)
-                                : backAuthStore.matchAnyRoles(page.security.accessRoles);
-                        if (!hasAccess) {
-                            window.location.href = `${wwLib.wwPageHelper.getPagePath(
-                                projectAuth.unauthorizedPageId
-                            )}?_source=${to.path}`;
-                            return null;
-                        }
                     }
                 }
             }
@@ -179,15 +229,17 @@ if (page404) {
 } else {
     routes.push({
         path: '/:pathMatch(.*)*',
+        redirect: null,
         async beforeEnter() {
             window.location.href = '/404';
         },
     });
 }
 
-let routerOptions = {};
+/** @type {RouterOptions} */
+let routerOptions;
 
-const isProd = isPublishedProductionHost(window.location.host);
+const isProd = getRuntimeEnvironment() === 'production';
 
 if (isProd && window.wwg_designInfo.baseTag?.href) {
     let baseTag = window.wwg_designInfo.baseTag.href;
@@ -199,7 +251,6 @@ if (isProd && window.wwg_designInfo.baseTag?.href) {
     }
 
     routerOptions = {
-        base: baseTag,
         history: createWebHistory(baseTag),
         routes,
     };

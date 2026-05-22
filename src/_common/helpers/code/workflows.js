@@ -261,6 +261,14 @@ export async function executeWorkflowAction(
     }
 
  
+    function setResolvedConfig(path, value) {
+         return value;
+    }
+
+    function resolveConfig(path, rawValue, localContext = context, options = {}) {
+        return setResolvedConfig(path, getValue(rawValue, localContext, options));
+    }
+
     try {
         switch (_actionType) {
             case 'custom-js': {
@@ -272,9 +280,11 @@ export async function executeWorkflowAction(
             case 'variable': {
                 const returnFullValue = action.type === 'update-variable';
                 if (!action.varId) throw new Error('No variable selected.');
-                const value = getValue(action.varValue, context, { event });
-                const path = action.usePath ? getValue(action.path || '', context, { event, recursive: false }) : null;
-                const index = getValue(action.index || 0, context, { event, recursive: false });
+                const value = resolveConfig('varValue', action.varValue, context, { event });
+                const path = action.usePath
+                    ? resolveConfig('path', action.path || '', context, { event, recursive: false })
+                    : setResolvedConfig('path', null);
+                const index = resolveConfig('index', action.index || 0, context, { event, recursive: false });
 
                 if (workflow.actions[action.varId]?.type === 'create-variable') {
                     let currentVar;
@@ -406,7 +416,7 @@ export async function executeWorkflowAction(
                 if (!action.variableName) throw new Error('No variable name specified.');
                 const value = getCreateVariableInitialValue(
                     action.variableType,
-                    getValue(action.variableValue, context, { event })
+                    resolveConfig('variableValue', action.variableValue, context, { event })
                 );
 
                 if (internal) {
@@ -469,18 +479,25 @@ export async function executeWorkflowAction(
                 if (!action.collectionId) throw new Error('No collection selected.');
                 const collection = wwLib.$store.getters['data/getCollections'][action.collectionId];
                 if (!collection) throw new Error('Collection not found.');
+                const data = resolveConfig('data', action.data, context, { event });
+                const updateIndex = resolveConfig('updateIndex', action.updateIndex, context, { event });
+                const idKey = resolveConfig('idKey', action.idKey, context, { event });
+                const idValue = resolveConfig('idValue', action.idValue, context, { event });
+                const merge = resolveConfig('merge', action.merge, context, { event });
+                const refreshFilter = resolveConfig('refreshFilter', action.refreshFilter, context, { event });
+                const refreshSort = resolveConfig('refreshSort', action.refreshSort, context, { event });
                 await wwLib.wwCollection.updateCollection(
                     action.collectionId,
-                    getValue(action.data, context, { event }),
+                    data,
                     {
                         updateType: action.updateType,
-                        updateIndex: getValue(action.updateIndex, context, { event }),
+                        updateIndex,
                         updateBy: action.updateBy,
-                        idKey: getValue(action.idKey, context, { event }),
-                        idValue: getValue(action.idValue, context, { event }),
-                        merge: getValue(action.merge, context, { event }),
-                        refreshFilter: getValue(action.refreshFilter, context, { event }),
-                        refreshSort: getValue(action.refreshSort, context, { event }),
+                        idKey,
+                        idValue,
+                        merge,
+                        refreshFilter,
+                        refreshSort,
                     }
                 );
                 break;
@@ -489,13 +506,14 @@ export async function executeWorkflowAction(
                 if (!action.tableViewId) throw new Error('No table view selected.');
 
                 const backTableViewsStore = useBackTableViewsStore(wwLib.$pinia);
+                const parameters = {
+                    offset: resolveConfig('offset', action.offset, context, { event }),
+                    limit: resolveConfig('limit', action.limit, context, { event }),
+                    ...resolveConfig('parameters', action.parameters, context, { event }),
+                };
 
                 await backTableViewsStore.fetchData(action.tableViewId, {
-                    parameters: {
-                        offset: getValue(action.offset, context, { event }),
-                        limit: getValue(action.limit, context, { event }),
-                        ...getValue(action.parameters, context, { event }),
-                    },
+                    parameters,
                     noLog: true,
                 });
                 break;
@@ -504,13 +522,14 @@ export async function executeWorkflowAction(
                 if (!action.tableViewId) throw new Error('No table view selected.');
 
                 const backTableViewsStore = useBackTableViewsStore(wwLib.$pinia);
+                const parameters = {
+                    ...backTableViewsStore.latestFetchParameters[action.tableViewId],
+                    limit: resolveConfig('limit', action.limit, context, { event }),
+                    offset: resolveConfig('offset', action.offset, context, { event }),
+                };
 
                 await backTableViewsStore.fetchData(action.tableViewId, {
-                    parameters: {
-                        ...backTableViewsStore.latestFetchParameters[action.tableViewId],
-                        limit: getValue(action.limit, context, { event }),
-                        offset: getValue(action.offset, context, { event }),
-                    },
+                    parameters,
                     noLog: true,
                 });
                 break;
@@ -522,13 +541,14 @@ export async function executeWorkflowAction(
 
                 const nextOffset = backTableViewsStore.data[action.tableViewId]?.metadata?.nextOffset;
                 if (!nextOffset) throw new Error('No more data to load.');
+                const parameters = {
+                    ...backTableViewsStore.latestFetchParameters[action.tableViewId],
+                    limit: resolveConfig('limit', action.limit, context, { event }),
+                    offset: nextOffset,
+                };
 
                 await backTableViewsStore.fetchData(action.tableViewId, {
-                    parameters: {
-                        ...backTableViewsStore.latestFetchParameters[action.tableViewId],
-                        limit: getValue(action.limit, context, { event }),
-                        offset: nextOffset,
-                    },
+                    parameters,
                     mode: 'load-more',
                     noLog: true,
                 });
@@ -536,7 +556,7 @@ export async function executeWorkflowAction(
             }
             case 'change-page': {
                 if (action.navigateMode === 'external') {
-                    const externalUrl = getValue(action.externalUrl, context, { event });
+                    const externalUrl = resolveConfig('externalUrl', action.externalUrl, context, { event });
 
                      /* wwFront:start */
                     if (action.openInNewTab) wwLib.getFrontWindow().open(externalUrl, '_blank');
@@ -550,27 +570,25 @@ export async function executeWorkflowAction(
                 let queries = {};
 
                 if (action.mode === 'path') {
-                    let path = getValue(action.path, context, { event });
+                    let path = resolveConfig('path', action.path, context, { event });
                     if (path !== '/' && path.endsWith('/')) path = path.replace(/\/$/, '');
                      /* wwFront:start */
                     href = path;
                     /* wwFront:end */
                 } else {
                     if (!action.pageId) throw new Error('No page selected.');
-                    const value = getValue(action.pageId, context, { event });
+                    const value = resolveConfig('pageId', action.pageId, context, { event });
                     const pageId = typeof value === 'object' ? value.id : value;
                     const page = wwLib.$store.getters['websiteData/getPageById'](pageId);
                     if (!page) throw new Error('Page not found.');
                      /* wwFront:start */
                     href = wwLib.wwPageHelper.getPagePath(pageId);
                     /* wwFront:end */
-                    const resolvedParameters = Object.keys(action.parameters || {}).reduce(
-                        (result, param) => ({
-                            ...result,
-                            [param]: getValue(action.parameters[param], context, { event }),
-                        }),
-                        {}
-                    );
+                    const resolvedParameters = Object.keys(action.parameters || {}).reduce((result, param) => {
+                        result[param] = getValue(action.parameters[param], context, { event });
+                        return result;
+                    }, {});
+                    setResolvedConfig('parameters', resolvedParameters);
                     const variables = wwLib.$store.getters['data/getPageParameterVariablesFromId'](pageId);
                      /* wwFront:start */
                     for (const variable of variables) {
@@ -582,7 +600,7 @@ export async function executeWorkflowAction(
                     /* wwFront:end */
                 }
 
-                const resolvedQueries = getValue(action.queries, context, { event });
+                const resolvedQueries = resolveConfig('queries', action.queries, context, { event });
                 if (resolvedQueries) {
                     if (Array.isArray(resolvedQueries) && resolvedQueries.length)
                         queries = resolvedQueries.reduce((queries, query) => {
@@ -597,7 +615,7 @@ export async function executeWorkflowAction(
                 if (action.loadProgress && action.loadProgressColor) {
                     wwLib.$store.dispatch('front/showPageLoadProgress', { color: action.loadProgressColor });
                 }
-                const section = getValue(action.section, context, { event });
+                const section = resolveConfig('section', action.section, context, { event });
                 const hash = wwLib.wwUtils.sanitize(
                     wwLib.$store.getters['websiteData/getSectionTitle'](section) || section
                 );
@@ -615,7 +633,7 @@ export async function executeWorkflowAction(
                 if (noBack) {
                     let href;
                     if (!action.pageId) throw new Error('No page selected.');
-                    const value = getValue(action.pageId, context, { event });
+                    const value = resolveConfig('pageId', action.pageId, context, { event });
                     const pageId = typeof value === 'object' ? value.id : value;
                     const page = wwLib.$store.getters['websiteData/getPageById'](pageId);
                     if (!page) throw new Error('Page not found.');
@@ -656,7 +674,7 @@ export async function executeWorkflowAction(
                     ? isInternalVariable
                         ? context?.component?.variables[action.varId]
                         : variablesStore.values[action.varId]
-                    : getValue(action.varId, context, { event });
+                    : resolveConfig('varId', action.varId, context, { event });
 
                 if (isVariable) {
                     if (!fileVariable) throw new Error('File variable not found.');
@@ -740,7 +758,10 @@ export async function executeWorkflowAction(
                             name: file.name.replace(/[#!@$%^&*()+=\[\]{};':"\\|,<>\? \/]/g, '_'), // Replace problematic characters with underscores
                             type: file.type || file.mimeType,
                             size: file.size,
-                            tag: `${getValue(action.fileTag, context, { event, recursive: false }) || ''}`,
+                            tag: `${resolveConfig('fileTag', action.fileTag, context, {
+                                event,
+                                recursive: false,
+                            }) || ''}`,
                         }
                     );
 
@@ -809,8 +830,8 @@ export async function executeWorkflowAction(
                         ? context?.component?.variables[action.args.varId]
                         : variablesStore.values[action.args.varId]
                     : isMultiple
-                      ? getValue(action.args.varId, context, { event })
-                      : [getValue(action.args.varId, context, { event })];
+                      ? resolveConfig('args.varId', action.args.varId, context, { event })
+                      : [resolveConfig('args.varId', action.args.varId, context, { event })];
 
                 if (isVariable) {
                     if (!fileVariable) throw new Error('File Element not found.');
@@ -830,8 +851,8 @@ export async function executeWorkflowAction(
                     : null;
 
                 const urls = isMultiple
-                    ? getValue(action.args.urls, context, { event })
-                    : { [files[0].name]: getValue(action.args.url, context, { event }) };
+                    ? resolveConfig('args.urls', action.args.urls, context, { event })
+                    : { [files[0].name]: resolveConfig('args.url', action.args.url, context, { event }) };
 
                 for (const file of files) {
                     if (!file || !file.name) throw new Error('File object is invalid.');
@@ -901,9 +922,10 @@ export async function executeWorkflowAction(
                 if (!workflow) throw new Error('Workflow not found.');
 
                 const parameters = {};
-                Object.keys(action.parameters || {}).forEach(paramName => {
+                for (const paramName of Object.keys(action.parameters || {})) {
                     parameters[paramName] = getValue(action.parameters[paramName], context, { event });
-                });
+                }
+                setResolvedConfig('parameters', parameters);
                 const execution = await executeWorkflow(workflow, {
                     context: {
                         ...context,
@@ -940,9 +962,10 @@ export async function executeWorkflowAction(
                 if (!workflow) throw new Error('Workflow not found.');
 
                 const parameters = {};
-                Object.keys(action.parameters || {}).forEach(paramName => {
+                for (const paramName of Object.keys(action.parameters || {})) {
                     parameters[paramName] = getValue(action.parameters[paramName], context, { event });
-                });
+                }
+                setResolvedConfig('parameters', parameters);
                 const execution = await executeWorkflow(workflow, {
                     context: {
                         ...context,
@@ -964,8 +987,8 @@ export async function executeWorkflowAction(
             }
             case 'execute-backend-workflow': {
                 const workflowId = action.workflowId || action.type.split(':')[1];
-                const inputData = getValue(action.parameters || {}, context, { event });
-                const options = getValue(action.args || {}, context, { event });
+                const inputData = resolveConfig('parameters', action.parameters || {}, context, { event });
+                const options = resolveConfig('args', action.args || {}, context, { event });
                 result = await executeBackendWorkflow(workflowId, inputData, options, context);
                 break;
             }
@@ -974,14 +997,14 @@ export async function executeWorkflowAction(
                 const trigger =
                     wwLib.$store.getters['libraries/getComponents'][context?.component?.baseUid]?.configuration
                         ?.triggers?.[action.triggerId];
-                const value = getValue(action.event, context, { event, recursive: false });
+                const value = resolveConfig('event', action.event, context, { event, recursive: false });
                 context?.component?.methods?.triggerEvent(action.triggerId, value);
                 break;
             }
             case 'component-action': {
                 if (!action.actionName) throw new Error('No actions selected.');
 
-                const argsValues = getValue(action.args, context, { event, recursive: true });
+                const argsValues = resolveConfig('args', action.args, context, { event, recursive: true });
                 result = executeComponentAction(
                     {
                         ...action,
@@ -995,7 +1018,7 @@ export async function executeWorkflowAction(
             }
             case 'execute-dropzone-workflow': {
                 if (!action.workflowId) throw new Error('No workflow selected.');
-                const parameters = getValue(action.parameters, context, { event });
+                const parameters = resolveConfig('parameters', action.parameters, context, { event });
                 const execution = await context?.dropzone?.methods?.executeWorkflow(action.workflowId, parameters, {
                     parentExecutionId: executionContext?.executionId,
                 });
@@ -1006,37 +1029,37 @@ export async function executeWorkflowAction(
                 break;
             }
             case 'return': {
-                result = getValue(action.value, context, { event });
+                result = resolveConfig('value', action.value, context, { event });
                 break;
             }
             case 'if': {
-                result = !!getValue(action.value, context, { event });
+                result = !!resolveConfig('value', action.value, context, { event });
                 break;
             }
             case 'switch': {
-                result = getValue(action.value, context, { event });
+                result = resolveConfig('value', action.value, context, { event });
                 break;
             }
             case 'filter': {
-                result = !!getValue(action.value, context, { event });
+                result = !!resolveConfig('value', action.value, context, { event });
                 stop = !result;
                 break;
             }
             case 'wait': {
                 if (action.value === undefined && action.duration === undefined)
                     throw new Error('No time delay defined.');
-                const delay = getValue(action.value || action.duration, context, { event });
+                const delay = resolveConfig('value', action.value || action.duration, context, { event });
                 await new Promise(resolve => setTimeout(resolve, delay));
                 break;
             }
             case 'return-result': {
-                stop = !getValue(action.args?.continueWorkflow, context, { event });
-                result = getValue(action.args?.data, context, { event });
+                stop = !resolveConfig('args.continueWorkflow', action.args?.continueWorkflow, context, { event });
+                result = resolveConfig('args.data', action.args?.data, context, { event });
                 returnResult({ result });
                 break;
             }
             case 'throw': {
-                const { message, cause } = getValue(action.args, context, { event });
+                const { message, cause } = resolveConfig('args', action.args, context, { event });
                 throw new Error(message, { cause });
             }
             case 'trycatch': {
@@ -1141,8 +1164,8 @@ export async function executeWorkflowAction(
                 break;
             }
             case 'download-csv': {
-                const data = getValue(action.data, context, { event });
-                const fileName = getValue(action.fileName, context, { event }) || 'data.csv';
+                const data = resolveConfig('data', action.data, context, { event });
+                const fileName = resolveConfig('fileName', action.fileName, context, { event }) || 'data.csv';
 
                 if (!Array.isArray(data) || data.length === 0) {
                     throw new Error('Data must be a non-empty array');
@@ -1180,7 +1203,7 @@ export async function executeWorkflowAction(
                 break;
             }
             case 'loop': {
-                let items = getValue(action.value, context, { event });
+                let items = resolveConfig('value', action.value, context, { event });
                 if (!Array.isArray(items)) {
                     throw new Error('Fail to start loop, as items to parse is not iterable');
                 }
@@ -1228,7 +1251,7 @@ export async function executeWorkflowAction(
                 break;
             }
             case 'while-loop': {
-                let value = getValue(action.value, context, { event });
+                let value = resolveConfig('value', action.value, context, { event });
                 let whileIndex = 0;
                 while (value) {
                     const whileScopeId = `${workflow.id}_${actionId}_while_${whileIndex}`;
@@ -1261,21 +1284,21 @@ export async function executeWorkflowAction(
                             ? context?.component?.workflowsResults?.[workflow.id]
                             : wwLib.$store.getters['data/getWorkflowResults'](workflow.id),
                     };
-                    value = getValue(action.value, localContext, { event });
+                    value = resolveConfig('value', action.value, localContext, { event });
                 }
                 break;
             }
             case 'continue-loop': {
-                result = stop = getValue(action.value, context, { event });
+                result = stop = resolveConfig('value', action.value, context, { event });
                 break;
             }
             case 'break-loop': {
-                result = breakLoop = getValue(action.value, context, { event });
+                result = breakLoop = resolveConfig('value', action.value, context, { event });
                 break;
             }
             case 'change-lang': {
                 if (!action.lang) throw new Error('No language selected.');
-                const lang = getValue(action.lang, context, { event });
+                const lang = resolveConfig('lang', action.lang, context, { event });
 
                 const setLangSuccess = wwLib.wwLang.setLang(lang);
                 if (!setLangSuccess) throw new Error(`Page does not contain the lang "${lang}"`);
@@ -1286,14 +1309,14 @@ export async function executeWorkflowAction(
                  break;
             }
             case 'copy-clipboard': {
-                result = getValue(action.value, context, { event });
+                result = resolveConfig('value', action.value, context, { event });
                 await navigator.clipboard.writeText(`${result}`);
                 break;
             }
             case 'share': {
-                const title = getValue(action.title, context, { event });
-                const text = getValue(action.text, context, { event });
-                const url = getValue(action.url, context, { event });
+                const title = resolveConfig('title', action.title, context, { event });
+                const text = resolveConfig('text', action.text, context, { event });
+                const url = resolveConfig('url', action.url, context, { event });
 
                 if (!navigator.share) throw new Error('Share is not available on this device');
 
@@ -1308,7 +1331,7 @@ export async function executeWorkflowAction(
                 break;
             }
             case 'vibrate': {
-                const pattern = getValue(action.pattern, context, { event });
+                const pattern = resolveConfig('pattern', action.pattern, context, { event });
 
                 if (!navigator.vibrate) throw new Error('Vibration is not available on this device');
                 if (!Array.isArray(pattern) || pattern.length === 0) {
@@ -1319,13 +1342,13 @@ export async function executeWorkflowAction(
                 break;
             }
             case 'show-notification': {
-                const title = getValue(action.title, context, { event });
-                const body = getValue(action.body, context, { event });
-                const icon = getValue(action.icon, context, { event });
-                const image = getValue(action.image, context, { event });
-                const tag = getValue(action.tag, context, { event });
-                const data = getValue(action.data, context, { event });
-                const vibrate = getValue(action.vibrate, context, { event });
+                const title = resolveConfig('title', action.title, context, { event });
+                const body = resolveConfig('body', action.body, context, { event });
+                const icon = resolveConfig('icon', action.icon, context, { event });
+                const image = resolveConfig('image', action.image, context, { event });
+                const tag = resolveConfig('tag', action.tag, context, { event });
+                const data = resolveConfig('data', action.data, context, { event });
+                const vibrate = resolveConfig('vibrate', action.vibrate, context, { event });
 
                 if (!('Notification' in window)) throw new Error('Notifications are not available');
 
@@ -1358,7 +1381,7 @@ export async function executeWorkflowAction(
                 break;
             }
             case 'file-create-url': {
-                const base64String = getValue(action.fileString, context, { event });
+                const base64String = resolveConfig('fileString', action.fileString, context, { event });
                 // Decode the Base64 string into a Uint8Array
                 const binaryString = atob(
                     base64String.startsWith('data:') ? base64String.split('base64,')[1] : base64String
@@ -1388,7 +1411,7 @@ export async function executeWorkflowAction(
                         file = variablesStore.values[action.file];
                     }
                 } else {
-                    file = getValue(action.file, context, { event });
+                    file = resolveConfig('file', action.file, context, { event });
                 }
                 if (!file) throw new Error('File not found.');
                 if (typeof file !== 'object') throw new Error('Not a file object.');
@@ -1407,7 +1430,7 @@ export async function executeWorkflowAction(
                 break;
             }
             case 'file-download-url': {
-                const res = await fetch(getValue(action.fileUrl, context, { event }));
+                const res = await fetch(resolveConfig('fileUrl', action.fileUrl, context, { event }));
                 if (!res.ok) {
                     const error = await res.text();
                     throw new Error('File could not be fetch', { cause: error });
@@ -1418,7 +1441,7 @@ export async function executeWorkflowAction(
                 const blobUrl = URL.createObjectURL(blob);
 
                 // Sanitize and validate the file name
-                let fileName = getValue(action.fileName, context, { event }) || '';
+                let fileName = resolveConfig('fileName', action.fileName, context, { event }) || '';
                 fileName = fileName.replace(/[^\w\s.-]/gi, '');
 
                 if (blobUrl.startsWith('blob:')) {
@@ -1440,7 +1463,7 @@ export async function executeWorkflowAction(
                 break;
             }
             case 'change-theme': {
-                let theme = getValue(action.theme, context, { event }) || 'light';
+                let theme = resolveConfig('theme', action.theme, context, { event }) || 'light';
 
                 if (theme === 'toggle') {
                     const currentTheme = wwLib.$store.getters['front/getTheme'];
@@ -1479,7 +1502,7 @@ export async function executeWorkflowAction(
 
                 result = await modalsStore.open(
                     _action.libraryComponentBaseId,
-                    getValue(_action.content, context, { event }),
+                    resolveConfig('content', _action.content, context, { event }),
                     {
                         waitClosing: _action.waitClosing,
                     }
@@ -1487,7 +1510,7 @@ export async function executeWorkflowAction(
                 break;
             }
             case 'close-popup': {
-                await context.local?.methods.popup.close.method(getValue(action.data, context, { event }));
+                await context.local?.methods.popup.close.method(resolveConfig('data', action.data, context, { event }));
                 break;
             }
             case 'close-all-popup': {
@@ -1496,7 +1519,7 @@ export async function executeWorkflowAction(
                 break;
             }
             case 'http-request': {
-                const args = getValue(action.args || {}, context, { event });
+                const args = resolveConfig('args', action.args || {}, context, { event });
 
                 try {
                     result = await betterFetch(args.url, {
@@ -1545,7 +1568,7 @@ export async function executeWorkflowAction(
                         action.connectionId = backAuthStore.connectionId;
                     }
                     result = await integrationsCore[integration]?.actions?.[actionName](
-                        { args: getValue(action.args, context, { event }) },
+                        { args: resolveConfig('args', action.args, context, { event }) },
                         {
                             connection: integrationsStore.getConnection(action.connectionId),
                             instance: integrationsStore.getInstance(action.connectionId || integration),
@@ -1560,6 +1583,7 @@ export async function executeWorkflowAction(
 
                         if (typeof method === 'function') {
                             const args = (action.args || []).map(arg => getValue(arg, context, { event }));
+                            setResolvedConfig('args', args);
                             result = method(...args);
                         }
                     }
@@ -1571,7 +1595,7 @@ export async function executeWorkflowAction(
                         currentAction.pluginId &&
                         wwLib.$store.getters['websiteData/getPluginById'](currentAction.pluginId);
                     if (!plugin) break;
-                    const args = getValue(action.args || [], context, { event });
+                    const args = resolveConfig('args', action.args || [], context, { event });
                     try {
                         const promise = wwLib.wwPlugins[plugin.namespace][currentAction.code](args, wwUtils);
                         result = currentAction.isAsync ? await promise : promise;

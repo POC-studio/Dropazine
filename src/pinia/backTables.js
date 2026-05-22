@@ -48,7 +48,7 @@ export const useBackTablesStore = defineStore('backTables', () => {
                 integration,
                 connectionId: table.connectionId,
                 config: table.config,
-                icon: `logos/${integration}`,
+                icon: integrations?.[integration]?.icon || `logos/${integration}`,
                 rawTable: table,
             };
         }
@@ -100,7 +100,7 @@ export const useBackTablesStore = defineStore('backTables', () => {
         const integrationOptions = Object.values(integrationTables).map(table => ({
             label: table.name,
             value: `${table.integration}/${table.id}`,
-            icon: `logos/${table.integration}`,
+            icon: integrations?.[table.integration]?.icon || `logos/${table.integration}`,
             isIntegration: true,
         }));
 

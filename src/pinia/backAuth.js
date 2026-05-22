@@ -3,7 +3,6 @@ import { defineStore } from 'pinia';
 import { useEnvVariablesStore } from '@/pinia/envVariables.js';
 import { useHooksStore } from '@/pinia/hooks.js';
  import { useIntegrationsStore } from '@/pinia/integrations.js';
-import { isPublishedProductionHost } from '@/_common/helpers/publishedRuntimeEnv.js';
 
 export const useBackAuthStore = defineStore('backAuth', () => {
     const projectAuth = ref(null);
@@ -61,9 +60,8 @@ export const useBackAuthStore = defineStore('backAuth', () => {
         localStorage.setItem('ww-auth-session', options.persist ? JSON.stringify(session.value) : '{}');
         let isServerSetup = false;
          /* wwFront:start */
-        isServerSetup = isPublishedProductionHost(wwLib.getFrontWindow().location.host) ? 
-            wwLib.$store.getters['websiteData/getDesignInfo']?.back?.isServerSetup?.production : 
-            wwLib.$store.getters['websiteData/getDesignInfo']?.back?.isServerSetup?.staging;
+        isServerSetup =
+            wwLib.$store.getters['websiteData/getDesignInfo']?.back?.isServerSetup?.[wwLib.getEnvironment()];
         /* wwFront:end */
         if (isServerSetup) {
             await wwServerClient('/ww/auth/session', { method: 'POST', body: { session: _session } });
@@ -77,9 +75,8 @@ export const useBackAuthStore = defineStore('backAuth', () => {
         localStorage.removeItem('ww-auth-session');
         let isServerSetup = false;
          /* wwFront:start */
-        isServerSetup = isPublishedProductionHost(wwLib.getFrontWindow().location.host) ? 
-            wwLib.$store.getters['websiteData/getDesignInfo']?.back?.isServerSetup?.production : 
-            wwLib.$store.getters['websiteData/getDesignInfo']?.back?.isServerSetup?.staging;
+        isServerSetup =
+            wwLib.$store.getters['websiteData/getDesignInfo']?.back?.isServerSetup?.[wwLib.getEnvironment()];
         /* wwFront:end */
         if (isServerSetup) {
             await wwServerClient('/ww/auth/session', { method: 'DELETE' });
